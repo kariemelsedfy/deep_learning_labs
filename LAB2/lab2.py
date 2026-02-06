@@ -58,20 +58,20 @@ def make_moon_data():
 def line_best_fit(x_data, y_data):
     # Calculate linear regression line (fit the data with a line)
     y = []
-    w1, w0 = np.polyfit(x_data, y_data, 1)  # Get slope (w1) and intercept (w0)
+    w1, w0 = np.polyfit(x_data, y_data, 1)
     for i in x_data:
-        y.append((w1*i) + w0)  # Compute the predicted y values from the line
+        y.append((w1*i) + w0)
     # Calculate how well the line fits (R-squared value)
     r_squared = round(r2_score(y_data, y), 3)
-    plt.figtext(0.1, 0.01, "R^2 = " + str(r_squared), fontsize=10)  # Display R² score on plot
-    plt.plot(x_data, y)  # Draw the regression line
+    plt.figtext(0.1, 0.01, "R^2 = " + str(r_squared), fontsize=10)
+    plt.plot(x_data, y)
 
 # Trains and evaluates a neural network with customizable architecture
 def run_MLP(X_train, X_test, y_train, y_test, hidden_layers_size=10, random_state=10,  momentum=.9, number_of_layers=1, batch_size=20):
     start = time.time()
     # Create MLP with specified number of hidden layers, each with same size
     clf = MLPClassifier(hidden_layer_sizes=tuple(hidden_layers_size for _ in range(number_of_layers)), random_state=random_state, solver='sgd', momentum = momentum, batch_size=batch_size, max_iter=5000)
-    clf.fit(X_train, y_train)  # Train the model
+    clf.fit(X_train, y_train)
     np.set_printoptions(suppress=True, precision=2)
     end = time.time()
     # Calculate training time in milliseconds
@@ -102,13 +102,13 @@ def plot_decision_boundaries(X, y, model_class, **model_params):
 
 # Test how momentum affects training speed
 def plot_mom_vs_runtime(X_train, X_test, y_train, y_test, type):
-    x = []  # Momentum values
-    y = []  # Runtime values
+    x = []
+    y = []
     # Try momentum from 0 to 0.99 in increments of 0.01
     for i in np.arange(0, 1, 0.01):
         x.append(i)
         data = run_MLP(X_train, X_test, y_train, y_test, momentum=i)
-        y.append(data[5])  # Extract runtime (index 5)
+        y.append(data[5])
 
     plt.figure()
     line_best_fit(x, y)
@@ -120,12 +120,12 @@ def plot_mom_vs_runtime(X_train, X_test, y_train, y_test, type):
 
 # Test how momentum affects model accuracy
 def plot_mom_vs_accuracy(X_train, X_test, y_train, y_test, type):
-    x = []  # Momentum values
-    y = []  # Accuracy values
+    x = []
+    y = []
     for i in np.arange(0, 1, 0.01):
         x.append(i)
         data = run_MLP(X_train, X_test, y_train, y_test, momentum=i)
-        y.append(data[6])  # Extract accuracy score (index 6)
+        y.append(data[6])
 
     plt.figure()
     plt.scatter(x, y)
@@ -136,13 +136,13 @@ def plot_mom_vs_accuracy(X_train, X_test, y_train, y_test, type):
 
 # Test how the size of hidden layers affects training speed
 def plot_layer_size_vs_runtime(X_train, X_test, y_train, y_test, type):
-    x = []  # Hidden layer sizes
-    y = []  # Runtime values
+    x = []
+    y = []
     # Try layer sizes from 1 to 99 neurons
     for i in np.arange(1, 100, 1):
         x.append(i)
         data = run_MLP(X_train, X_test, y_train, y_test, hidden_layers_size=i)
-        y.append(data[5])  # Extract runtime (index 5)
+        y.append(data[5])
 
     plt.figure()
     line_best_fit(x, y)
@@ -154,13 +154,13 @@ def plot_layer_size_vs_runtime(X_train, X_test, y_train, y_test, type):
 
 # Test how the size of hidden layers affects model accuracy (momentum fixed at 0.9)
 def plot_layer_size_vs_accuracy(X_train, X_test, y_train, y_test, type):
-    x = []  # Hidden layer sizes
-    y = []  # Accuracy values
+    x = []
+    y = []
     for i in np.arange(1, 100, 1):
         x.append(i)
         # Parameters: hidden_size=i, random_state=10, momentum=.9
         data = run_MLP(X_train, X_test, y_train, y_test, i, 10, .9,)
-        y.append(data[6])  # Extract accuracy score (index 6)
+        y.append(data[6])
 
     plt.figure()
     plt.scatter(x, y)
@@ -171,13 +171,13 @@ def plot_layer_size_vs_accuracy(X_train, X_test, y_train, y_test, type):
 
 # Test how the number of hidden layers affects model accuracy
 def plot_number_of_layers_vs_accuracy(X_train, X_test, y_train, y_test, type):
-    x = []  # Number of hidden layers
-    y = []  # Accuracy values
-    # Try networks with 1 to 9 hidden layers
-    for i in np.arange(1, 10, 1):
+    x = []
+    y = []
+    # Try networks with 1 to 99 hidden layers
+    for i in np.arange(1, 100, 1):
         x.append(i)
         data = run_MLP(X_train, X_test, y_train, y_test, number_of_layers=i)
-        y.append(data[6])  # Extract accuracy score (index 6)
+        y.append(data[6])
 
     plt.figure()
     plt.scatter(x, y)
@@ -190,12 +190,12 @@ def plot_number_of_layers_vs_accuracy(X_train, X_test, y_train, y_test, type):
 
 # Test how the number of hidden layers affects training speed
 def plot_number_of_layers_vs_runtime(X_train, X_test, y_train, y_test, type):
-    x = []  # Number of hidden layers
-    y = []  # Runtime values
-    for i in np.arange(1, 10, 1):
+    x = []
+    y = []
+    for i in np.arange(1, 100, 1):
         x.append(i)
         data = run_MLP(X_train, X_test, y_train, y_test, number_of_layers=i)
-        y.append(data[5])  # Extract runtime (index 5)
+        y.append(data[5])
 
     plt.figure()
     line_best_fit(x, y)
@@ -208,13 +208,13 @@ def plot_number_of_layers_vs_runtime(X_train, X_test, y_train, y_test, type):
 
 # Test how batch size affects model accuracy
 def plot_batch_size_vs_accuracy(X_train, X_test, y_train, y_test, type):
-    x = []  # Batch sizes
-    y = []  # Accuracy values
+    x = []
+    y = []
     # Try batch sizes from 1 to training set size, in increments of 10
     for i in np.arange(1, len(X_train),10):
         x.append(i)
         data = run_MLP(X_train, X_test, y_train, y_test, batch_size=i)
-        y.append(data[6])  # Extract accuracy score (index 6)
+        y.append(data[6])
 
     plt.figure()
     plt.scatter(x, y)
@@ -227,13 +227,13 @@ def plot_batch_size_vs_accuracy(X_train, X_test, y_train, y_test, type):
 
 # Test how batch size affects training speed
 def plot_batch_size_vs_runtime(X_train, X_test, y_train, y_test, type):
-    x = []  # Batch sizes
-    y = []  # Runtime values
+    x = []
+    y = []
     # Try batch sizes from 1 to training set size, in increments of 10
     for i in np.arange(1, len(X_train), 10):
         x.append(i)
         data = run_MLP(X_train, X_test, y_train, y_test, batch_size=i)
-        y.append(data[5])  # Extract runtime (index 5)
+        y.append(data[5])
 
     plt.figure()
     line_best_fit(x, y)
