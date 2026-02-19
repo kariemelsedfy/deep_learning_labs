@@ -10,31 +10,19 @@ from torch.optim import Adam
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-#loads data
+# loads data, calling the FMNISTDatasetMLP class
 fmnist_train = datasets.FashionMNIST('~/data/FMNIST', download=True, train=True)
 fmnist_test = datasets.FashionMNIST('~/data/FMNIST', download=True, train=False)
 x_train, y_train = fmnist_train.data, fmnist_train.targets
 x_test, y_test = fmnist_test.data, fmnist_test.targets
 
+# separates data into training and test data
 train_dataset = FMNISTDataset(x_train, y_train)
 train_dl = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_dataset = FMNISTDataset(x_test, y_test)
 test_dl = DataLoader(test_dataset, batch_size=32, shuffle=True)
 
-#show example plots
-"""
-plt.figure(figsize=(10,3))
-for i in range(4):
-    plt.subplot(1,4,i+1)
-    plt.imshow(x_train[i])
-    plt.title(f"Label {y_train[i]}")
-plt.show()"""
-
-model = nn.Sequential(nn.Linear(28 * 28, 1000), nn.ReLU(), nn.Linear(1000, 10)).to(device)
-summary(model, (1, 28*28))
-loss_fn = nn.CrossEntropyLoss()
-opt = Adam(model.parameters(), lr=1e-3)
-
+# helper function for run_CNN, determines loss
 def train_batch(x, y, model, opt, loss_fn):
     model.train()
     opt.zero_grad() # Flush memory
@@ -43,6 +31,7 @@ def train_batch(x, y, model, opt, loss_fn):
     opt.step() # Make a GD step
     return batch_loss.detach().cpu().numpy()
 
+# helper function for run_CNN, helps determine accuracy
 @torch.no_grad()
 def accuracy(x, y, model):
     model.eval()
@@ -51,41 +40,64 @@ def accuracy(x, y, model):
     s = torch.sum((argmaxes == y).float())/len(y)
     return s.cpu().numpy()
 
-losses, accuracies, n_epochs = [], [], []
-n_epochs = 5
+# loss and accuracy plots for MLP comparison, batch norm and dropout
+def plot(losses, accuracies, n_epochs):
+    plt.figure(figsize=(13, 3))
+    plt.subplot(121)
+    plt.title('Training Loss value over epochs')
+    plt.plot(np.arange(n_epochs) + 1, losses)
+    plt.subplot(122)
+    plt.title('Testing Accuracy value over epochs')
+    plt.plot(np.arange(n_epochs) + 1, accuracies)
+    plt.show()
 
-for epoch in range(n_epochs):
-    print(f"Running epoch {epoch + 1} of {n_epochs}")
-    epoch_losses, epoch_accuracies = [], []
+# main function that takes in a sequential model and n_epochs, computes losses and prints test accuracies
+def run_MLP():
+    losses, accuracies = [], []
+    n_epochs = 5
 
-    for batch in train_dl:
-        x, y = batch
-        batch_loss = train_batch(x, y, model, opt, loss_fn)
-        epoch_losses.append(batch_loss)
+    model = nn.Sequential(
+        nn.Linear(28 * 28, 1000),
+        nn.ReLU(),
+        nn.Linear(1000, 10)
+    ).to(device)
 
-    epoch_loss = np.mean(epoch_losses)
+    loss_fn = nn.CrossEntropyLoss()
+    opt = Adam(model.parameters(), lr=1e-3) # presets
 
-    for batch in train_dl:
-        x, y = batch
-        batch_acc = accuracy(x, y, model)
-        epoch_accuracies.append(batch_acc)
+    # iterates once for each epoch, computing and updating weights
+    for epoch in range(n_epochs):
+        print(f"Running epoch {epoch + 1} of {n_epochs}")
+        epoch_losses, epoch_accuracies = [], []
 
-    epoch_accuracy = np.mean(epoch_accuracies)
-    losses.append(epoch_loss)
-    accuracies.append(epoch_accuracy)
+        # where the updates actually occur
+        for batch in train_dl:
+            x, y = batch
+            batch_loss = train_batch(x, y, model, opt, loss_fn)
+            epoch_losses.append(batch_loss)
 
-epoch_accuracies = []
-for batch in test_dl:
- x, y = batch
- batch_acc = accuracy(x, y, model)
- epoch_accuracies.append(batch_acc)
-print(f"Test accuracy: {np.mean(epoch_accuracies)}")
+        epoch_loss = np.mean(epoch_losses)
 
-plt.figure(figsize=(13,3))
-plt.subplot(121)
-plt.title('Training Loss value over epochs')
-plt.plot(np.arange(n_epochs) + 1, losses)
-plt.subplot(122)
-plt.title('Testing Accuracy value over epochs')
-plt.plot(np.arange(n_epochs) + 1, accuracies)
-plt.show()
+        # computes training accuracies
+        for batch in train_dl:
+            x, y = batch
+            batch_acc = accuracy(x, y, model)
+            epoch_accuracies.append(batch_acc)
+
+        epoch_accuracy = np.mean(epoch_accuracies)
+        losses.append(epoch_loss)
+        accuracies.append(epoch_accuracy)
+
+    epoch_accuracies = []
+
+    # computes test accuracies
+    for batch in test_dl:
+     x, y = batch
+     batch_acc = accuracy(x, y, model)
+     epoch_accuracies.append(batch_acc)
+    print(f"Test accuracy: {np.mean(epoch_accuracies)}")
+
+    # plot data
+    plot(losses, accuracies, n_epochs)
+
+run_MLP() # runs MLP experiment to compare to CNN
