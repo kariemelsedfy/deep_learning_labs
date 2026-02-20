@@ -8,8 +8,10 @@ from torchvision import datasets
 from torchsummary import summary
 from torch.optim import Adam
 import time
+from pathlib import Path
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+RESULTS_DIR = Path(__file__).resolve().parent
 
 # loads data, calling the FMNISTDatasetCNN class
 fmnist_train = datasets.FashionMNIST('~/data/FMNIST', download=True, train=True)
@@ -81,7 +83,7 @@ def run_CNN(model, n_epochs):
     return losses, accuracies, np.mean(epoch_accuracies)
 
 # loss and accuracy plots for MLP comparison, batch norm and dropout
-def plot(losses, accuracies, n_epochs):
+def plot(losses, accuracies, n_epochs, save_name=None):
     plt.figure(figsize=(13, 3))
     plt.subplot(121)
     plt.title('Training Loss value over epochs')
@@ -89,16 +91,20 @@ def plot(losses, accuracies, n_epochs):
     plt.subplot(122)
     plt.title('Testing Accuracy value over epochs')
     plt.plot(np.arange(n_epochs) + 1, accuracies)
-    plt.show()
+    if save_name is not None:
+        plt.savefig(RESULTS_DIR / f"{save_name}.png", bbox_inches='tight')
+    plt.close()
 
 # basic plot for all other experiments
-def plot_general(x, y, title, x_name, y_name):
+def plot_general(x, y, title, x_name, y_name, save_name=None):
     plt.figure()
     plt.title(title)
     plt.ylabel(y_name)
     plt.xlabel(x_name)
     plt.scatter(x, y)
-    plt.show()
+    if save_name is not None:
+        plt.savefig(RESULTS_DIR / f"{save_name}.png", bbox_inches='tight')
+    plt.close()
 
 # helper function for comparing how weights increase with changing parameters
 def compute_weights(params):
@@ -110,12 +116,12 @@ def compute_weights(params):
 # kernel size varying experiment
 def vary_kernel():
     times = []
+    weights = []
     performances = []
-    range = [2, 3, 5, 7, 9]
+    kernel_sizes = [2, 3, 5, 7, 9]
 
-    for i in range:
+    for i in kernel_sizes:
         start = time.time()
-        weights = []
         kernels = i
         out_channels = 10
         linear_size = out_channels * ((28 - kernels + 1) // 2)**2 # computes input size for linear input
@@ -130,7 +136,7 @@ def vary_kernel():
             nn.Linear(int(linear_size), 10)
         ).to(device)
 
-        weights.append(compute_weights(list(filter_model.parameters())))
+        weights.append(compute_weights(list(kernel_model.parameters())))
 
         _, _, performance = run_CNN(kernel_model, 5) # run CNN
         performances.append(performance)
@@ -139,16 +145,15 @@ def vary_kernel():
         times.append((end - start))
 
     # plots data
-    plot_general(range, performances, "Kernel Size vs. Accuracy", "Kernel Size", "Accuracy")
-    plot_general(range, times, "Kernel Size vs. Runtime", "Kernel Size", "Runtime (s)")
-    plot_general(range, weights, "Kernel Size vs. Weights", "Kernel Size", "Weights")
-
+    plot_general(kernel_sizes, performances, "Kernel Size vs. Accuracy", "Kernel Size", "Accuracy", "kernel_vs_accuracy")
+    plot_general(kernel_sizes, times, "Kernel Size vs. Runtime", "Kernel Size", "Runtime (s)", "kernel_vs_runtime")
+    plot_general(kernel_sizes, weights, "Kernel Size vs. Weights", "Kernel Size", "Weights", "kernel_vs_weights")
 def vary_filters():
     times = []
     weights = []
     performances = []
-    range = [5, 10, 15, 20, 25]
-    for i in range:
+    filter_sizes = [5, 10, 15, 20, 25]
+    for i in filter_sizes:
         start = time.time()
 
         kernels = 1
@@ -174,10 +179,9 @@ def vary_filters():
         times.append((end - start))
 
     # plots data
-    plot_general(range, performances, "FilterSize vs. Accuracy", "Filter Size", "Accuracy")
-    plot_general(range, times, "Filter Size vs. Runtime", "Filter Size", "Runtime (s)")
-    plot_general(range, weights, "Filter Size vs. Weights", "Filter Size", "Weights")
-
+    plot_general(filter_sizes, performances, "FilterSize vs. Accuracy", "Filter Size", "Accuracy", "filters_vs_accuracy")
+    plot_general(filter_sizes, times, "Filter Size vs. Runtime", "Filter Size", "Runtime (s)", "filters_vs_runtime")
+    plot_general(filter_sizes, weights, "Filter Size vs. Weights", "Filter Size", "Weights", "filters_vs_weights")
 # choose 3 kernels and 15 out channels (previous experiments showed this maximises accuracy)
 def run_batch_norm():
     kernels = 3
@@ -197,8 +201,7 @@ def run_batch_norm():
     losses, accuracies, _ = run_CNN(kernel_model, 5) # run CNN
 
     # plots data
-    plot(losses, accuracies, 5)
-
+    plot(losses, accuracies, 5, "batch_norm_training_curves")
 # choose p = 0.8 as this is what the article uses for input units
 # choose 3 kernels and 15 out channels (previous experiments showed this maximises accuracy)
 def run_dropout():
@@ -219,8 +222,7 @@ def run_dropout():
     losses, accuracies, _ = run_CNN(kernel_model, 5) # run CNN
 
     # plots data
-    plot(losses, accuracies, 5)
-
+    plot(losses, accuracies, 5, "dropout_training_curves")
 def compare_to_MLP():
     # complex sequential to take CNN to it limit to compare to MLP
     model_test = nn.Sequential(
@@ -241,8 +243,7 @@ def compare_to_MLP():
     losses, accuracies, _ = run_CNN(model_test, 5) # run CNN
 
     # plots data
-    plot(losses, accuracies, 5)
-
+    plot(losses, accuracies, 5, "cnn_vs_mlp_training_curves")
 compare_to_MLP() # runs MLP comparisons experiment
 vary_kernel() # runs kernel variation experiment
 vary_filters() # runs filter variation experiment

@@ -7,8 +7,10 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchsummary import summary
 from torch.optim import Adam
+from pathlib import Path
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+RESULTS_DIR = Path(__file__).resolve().parent
 
 # loads data, calling the FMNISTDatasetMLP class
 fmnist_train = datasets.FashionMNIST('~/data/FMNIST', download=True, train=True)
@@ -49,7 +51,8 @@ def plot(losses, accuracies, n_epochs):
     plt.subplot(122)
     plt.title('Testing Accuracy value over epochs')
     plt.plot(np.arange(n_epochs) + 1, accuracies)
-    plt.show()
+    plt.savefig(RESULTS_DIR / "mlp_training_curves.png", bbox_inches='tight')
+    plt.close()
 
 # main function that takes in a sequential model and n_epochs, computes losses and prints test accuracies
 def run_MLP():
@@ -95,9 +98,9 @@ def run_MLP():
      x, y = batch
      batch_acc = accuracy(x, y, model)
      epoch_accuracies.append(batch_acc)
-    print(f"Test accuracy: {np.mean(epoch_accuracies)}")
+    test_accuracy = np.mean(epoch_accuracies)
+    print(f"Test accuracy: {test_accuracy}")
 
     # plot data
     plot(losses, accuracies, n_epochs)
-
 run_MLP() # runs MLP experiment to compare to CNN
